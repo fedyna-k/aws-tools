@@ -4,7 +4,7 @@
  * @author Kevin Fedyna
  */
 
-const { IAMClient, ListUsersCommand } = require("@aws-sdk/client-iam");
+const { IAMClient, ListUsersCommand, ListGroupsForUserCommand } = require("@aws-sdk/client-iam");
 
 /**
  * Prints log with custom tag.
@@ -28,12 +28,10 @@ function progress(percentage) {
 }
 
 /**
- * Get all users that match provided groups. 
- * @param {string[]} groups The groups filter.
+ * Get all AWS users.
  */
-async function getUsers(groups) {
+async function getUsers() {
     log("Requesting users...");
-    
     let response;
     let users = [];
     let marker = undefined;
@@ -43,14 +41,40 @@ async function getUsers(groups) {
         const command = new ListUsersCommand(input);
         response = await client.send(command);
 
-        users = users.concat(response.Users);
+        const usernames = response.Users.map(user => user.UserName);
+        users = users.concat(usernames);
+
         marker = response.Marker;
     } while (response.IsTruncated);
 
+    log(`${users.length} users found.`);
     log("Requesting users [OK]");
-
     return users;
 }
 
+/**
+ * Get all user groups asynchronously.
+ * @param {string[]} users The list of users. 
+ */
+async function getUsersGroups(users) {
+    log("Retreiving users groups...");
+
+    const requestUserGroup = async user => {
+        const input = { UserName: user };
+        const command = new ListGroupsForUserCommand(input);
+        return client.send(command);
+    };
+
+    log("Retreiving users groups [OK]");
+    return Promise.all(users.map(requestUserGroup));
+}
+
+async function main() {
+    const users = await getUsers();
+    const groups = await getUsersGroups(users);
+
+    console.log(groups);
+}
+
 const client = new IAMClient();
-getUsers();
+main();
