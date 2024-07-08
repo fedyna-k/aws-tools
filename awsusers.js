@@ -176,7 +176,7 @@ async function main(args) {
     users = users.map(user => `${user},https://www.office.com/search?q=${user}`);
     writeFileSync("awsusers.csv", users.join("\n") + "\n");
     log("Generating CSV output file [CREATED awsusers.csv]");
-    log("\x1b[3mSee output with \x1b[0mcat awsusers.csv \x1b[3mcommand.\x1b[0m");
+    log("See output with \x1b[93mcat awsusers.csv\x1b[0m command.");
 }
 
 const MAX_SOCKET = 10;  // Optimum bucket size to avoid throttling
