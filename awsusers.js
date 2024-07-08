@@ -107,8 +107,7 @@ function filterByGroups(users, groups, filters) {
     const regexFilters = filters.map(filter => new RegExp(filter));
     return users.filter((user, index) =>
         groups[index].reduce((matchingGroup, group) =>
-            regexFilters.reduce((matching, filter) => group.match(filter) != null || matching) || matchingGroup, false)
-        , false);
+            regexFilters.reduce((matching, filter) => group.match(filter) != null || matching, false) || matchingGroup, false));
 } 
 
 /**
