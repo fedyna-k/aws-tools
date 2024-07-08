@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@aws-sdk/client-iam": "^3.609.0"
+  }
+}
