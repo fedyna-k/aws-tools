@@ -5,7 +5,7 @@
  */
 
 const { promisify } = require("node:util");
-const { exec } = promisify(require("node:child_process"));
+const exec = promisify(require("node:child_process").exec);
 
 /**
  * Get all users that match provided groups. 
@@ -13,8 +13,9 @@ const { exec } = promisify(require("node:child_process"));
  */
 async function getUsers(groups) {
     const { stdout, stderr } = await exec(`aws iam list-users --query 'Users[].UserName' --output text`);
-    
-    console.log(stdout);
+    const emails = stdout.split("\t");
+
+    console.log(emails);
 }
 
 getUsers();
