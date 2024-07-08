@@ -22,7 +22,11 @@ function log(...data) {
  */
 function progress(percentage) {
     let full = Math.floor(percentage * 50);
-    process.stdout.write(`\r\x1b[1m\x1b[93m[group audit]\x1b[0m  [${"#".repeat(full)}${".".repeat(50 - full)}]`);
+    process.stdout.write(`\r\x1b[1m\x1b[93m[group audit]\x1b[0m  [${"#".repeat(full)}${".".repeat(50 - full)}] (${(percentage * 100).toFixed(1)}%)`);
+
+    if (percentage == 1) {
+        console.log("");
+    }
 }
 
 /**
@@ -44,7 +48,7 @@ async function getUsers(groups) {
     for (let user of users) {
         const promise = exec(`aws iam list-groups-for-user --user-name ${user} --query "Groups[].GroupName" --output text`);
         userGroupsPromises.push(promise.then(({ stdout, stderr }) => {
-            progress(done / users.length);
+            progress(++done / users.length);
             return { user, groups: stdout.split("\t") }
         }));
     }
