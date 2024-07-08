@@ -30,6 +30,47 @@ function progress(percentage) {
 }
 
 /**
+ * Run promises as pool.
+ * @param {any[]} args The arguments for the function fn.
+ * @param {Function} fn The function to process asynchronously.
+ * @param {number} limit The pool limit.
+ * @returns The outputs of the functions.
+ */
+async function promisePool(args, fn, limit) {
+    return new Promise((resolve) => {
+        const argQueue = [...args].reverse();
+
+        let count = 0;
+        const outs = [];
+
+        const pollNext = () => {
+            if (argQueue.length === 0 && count === 0) {
+                resolve(outs);
+            } else {
+                while (count < limit && argQueue.length) {
+                    const index = args.length - argQueue.length;
+                    const arg = argQueue.pop();
+                    count++;
+                    const out = fn(arg);
+                    const processOut = (out, index) => {
+                        outs[index] = out;
+                        count -= 1;
+                        pollNext();
+                    };
+                    if (typeof out === 'object' && out.then) {
+                        out.then(out => processOut(out, index));
+                    } else {
+                        processOut(out, index);
+                    }
+                }
+            }
+        };
+
+        pollNext();
+      });
+}
+
+/**
  * Get all users that match provided groups. 
  * @param {string[]} groups The groups filter.
  */
@@ -44,18 +85,19 @@ async function getUsers(groups) {
 
     let userGroupsPromises = [];
     let done = 0;
+    
+    let indices = new Array(MAX_SHELL);
 
-    for (let user of users) {
-        const promise = exec(`aws iam list-groups-for-user --user-name ${user} --query "Groups[].GroupName" --output text`);
-        userGroupsPromises.push(promise.then(({ stdout, stderr }) => {
-            progress(++done / users.length);
-            return { user, groups: stdout.split("\t") }
-        }));
+    const process = async user => {
+        const { stdout, stderr } = await exec(`aws iam list-groups-for-user --user-name ${user} --query "Groups[].GroupName" --output text`);
+        progress(++done / users.length);
+        return { user, groups: stdout.split("\t") }
     }
 
-    const userGroups = await Promise.all(userGroupsPromises);
+    const userGroups = await promisePool(users, process, MAX_SHELL);
     log("Requesting groups [OK]");
 
 }
 
+const MAX_SHELL = 10;
 getUsers();
