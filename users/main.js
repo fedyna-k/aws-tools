@@ -36,7 +36,7 @@ async function getUsers(groups) {
     
     let response;
     let users = [];
-    let marker = 0;
+    let marker = undefined;
 
     do {
         const input = { Marker: marker };
@@ -53,4 +53,4 @@ async function getUsers(groups) {
 }
 
 const client = new IAMClient();
-console.log(getUsers());
+getUsers();
