@@ -65,12 +65,18 @@ async function getUsersGroups(users) {
         return client.send(command);
     };
 
+    const groups = await Promise.all(users.map(requestUserGroup));
+
     log("Retreiving users groups [OK]");
-    return Promise.all(users.map(requestUserGroup));
+    return groups;
 }
 
 async function main() {
     const users = await getUsers();
+
+    console.log(users);
+
+
     const groups = await getUsersGroups(users);
 
     console.log(groups);
