@@ -69,7 +69,9 @@ async function getUsersGroups(users) {
     let usersCopy = [...users];
     
     while (usersCopy.length) {
-        groups.concat(await Promise.all(usersCopy.splice(0, MAX_SOCKET).map(requestUserGroup)))
+        const responses = await Promise.all(usersCopy.splice(0, MAX_SOCKET).map(requestUserGroup));
+        const responsesGroups = responses.map(response => response.Groups.map(group => group.GroupName));
+        groups = groups.concat(responsesGroups);
     }
 
     log("Retreiving users groups [OK]");
@@ -78,15 +80,11 @@ async function getUsersGroups(users) {
 
 async function main() {
     const users = await getUsers();
-
-    console.log(users);
-
-
     const groups = await getUsersGroups(users);
 
     console.log(groups);
 }
 
-const MAX_SOCKET = 50;
+const MAX_SOCKET = 15;  // Throttling exceptions after this number
 const client = new IAMClient();
 main();
