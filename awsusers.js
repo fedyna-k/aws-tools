@@ -11,7 +11,7 @@ const { IAMClient, ListUsersCommand, ListGroupsForUserCommand } = require("@aws-
  * @param  {...any} data The data to log.
  */
 function log(...data) {
-    console.log("\x1b[1m\x1b[93m[users.js]\x1b[0m  ", ...data);
+    console.log("\x1b[1m\x1b[93m[awsusers.js]\x1b[0m  ", ...data);
 }
 
 /**
@@ -20,7 +20,7 @@ function log(...data) {
  */
 function progress(percentage) {
     let full = Math.floor(percentage * 50);
-    process.stdout.write(`\r\x1b[1m\x1b[93m[group audit]\x1b[0m  [${"#".repeat(full)}${".".repeat(50 - full)}] (${(percentage * 100).toFixed(1)}%)`);
+    process.stdout.write(`\r\x1b[1m\x1b[93m[awsusers.js]\x1b[0m  [${"#".repeat(full)}${".".repeat(50 - full)}] (${(percentage * 100).toFixed(1)}%)`);
 
     if (percentage == 1) {
         console.log("");
@@ -48,7 +48,7 @@ async function getUsers() {
         marker = response.Marker;
     } while (response.IsTruncated);
 
-    log(`${users.length} users found.`);
+    log(`${users.length} users fetched.`);
     log("Requesting users [OK]");
     return users;
 }
@@ -92,7 +92,7 @@ async function getUsersGroups(users) {
 function filterUsers(users, filters) {
     const regexFilters = filters.map(filter => new RegExp(filter));
     return users.filter(user =>
-        regexFilters.reduce((matching, filter) => user.match(filter) || matching)
+        regexFilters.reduce((matching, filter) => user.match(filter) != null || matching)
         , false);
 }
 
@@ -103,11 +103,11 @@ function filterUsers(users, filters) {
  * @param {string[]} filters the filter list (regex).
  * @returns The filtered users.
  */
-function filterGroups(users, groups, filters) {
+function filterByGroups(users, groups, filters) {
     const regexFilters = filters.map(filter => new RegExp(filter));
     return users.filter((user, index) =>
         groups[index].reduce((matchingGroup, group) =>
-            regexFilters.reduce((matching, filter) => group.match(filter) || matching) || matchingGroup
+            regexFilters.reduce((matching, filter) => group.match(filter) != null || matching) || matchingGroup
             , false)
         , false);
 } 
@@ -161,13 +161,20 @@ function readArgs(args) {
 async function main(args) {
     const [ userFilters, groupFilters ] = readArgs(args);
 
-    const users = await getUsers();
-    const filteredUsers = userFilters.length ? filterUsers(users, userFilters) : users;
+    let users = await getUsers();
     
-    const groups = await getUsersGroups(filteredUsers);
-    const filteredGroups = groupFilters.length ? filterGroups(filteredUsers, groups, groupFilters) : groups;
+    if (userFilters.length) {
+        users = filterUsers(users, userFilters);
+        log(`${users.length} users with matching name.`);
+    }
     
-    console.log(filteredGroups);
+    if (groupFilters.length) {
+        const groups = await getUsersGroups(users);
+        users = filterByGroups(users, groups, groupFilters);
+        log(`${filteredGroups.length} users with matching groups.`);
+    }
+    
+    console.log(users);
 }
 
 const MAX_SOCKET = 15;  // Throttling exceptions after this number
