@@ -4,8 +4,6 @@
  * @author Kevin Fedyna
  */
 
-const { promisify } = require("node:util");
-const exec = promisify(require("node:child_process").exec);
 const { IAMClient, ListUsersCommand } = require("@aws-sdk/client-iam");
 
 /**
@@ -36,30 +34,23 @@ function progress(percentage) {
 async function getUsers(groups) {
     log("Requesting users...");
     
-    const client = new IAMClient();
-    const input = { MaxItems: Infinity };
-    const command = new ListUsersCommand(input);
-    const { Users: users } = await client.send(command);
+    let response;
+    let users = [];
+    let marker = 0;
 
-    log(users);
+    do {
+        const input = { Marker: marker };
+        const command = new ListUsersCommand(input);
+        response = await client.send(command);
+
+        users = users.concat(response.Users);
+        marker = response.Marker;
+    } while (response.IsTruncated);
 
     log("Requesting users [OK]");
-    log("Requesting groups...");
 
-    let userGroupsPromises = [];
-    let done = 0;
-
-    // for (let user of users) {
-    //     const promise = fetch(`https://us-east-1.console.aws.amazon.com/iam/home?region=eu-west-1#/users/details/${user}?section=groups`);
-    //     userGroupsPromises.push(promise.then(({ stdout, stderr }) => {
-    //         progress(++done / users.length);
-    //         return { user, groups: stdout.split("\t") }
-    //     }));
-    // }
-
-    const userGroups = await Promise.all(userGroupsPromises);
-    log("Requesting groups [OK]");
-
+    return users;
 }
 
-getUsers();
+const client = new IAMClient();
+console.log(getUsers());
