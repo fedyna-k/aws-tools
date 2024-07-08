@@ -4,7 +4,7 @@
  * @author Kevin Fedyna
  */
 
-const readFileSync = require("fs").readFileSync;
+const writeFileSync = require("fs").writeFileSync;
 const { IAMClient, ListUsersCommand, ListGroupsForUserCommand } = require("@aws-sdk/client-iam");
 
 /**
@@ -172,9 +172,12 @@ async function main(args) {
         log(`${users.length} users with matching groups.`);
     }
     
-    console.log(users);
+    log("Generating CSV output file...")
+    users = users.map(user => `${user},https://www.office.com/search?q=${user}`);
+    writeFileSync("awsusers.csv", users.join("\n"));
+    log("Generating CSV output file [CREATED awsusers.csv]")
 }
 
-const MAX_SOCKET = 15;  // Throttling exceptions after this number
+const MAX_SOCKET = 10;  // Optimum bucket size to avoid throttling
 const client = new IAMClient();
 main(process.argv.slice(2));
