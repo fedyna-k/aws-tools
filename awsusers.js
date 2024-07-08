@@ -4,6 +4,7 @@
  * @author Kevin Fedyna
  */
 
+const readFileSync = require("fs").readFileSync;
 const { IAMClient, ListUsersCommand, ListGroupsForUserCommand } = require("@aws-sdk/client-iam");
 
 /**
@@ -20,7 +21,7 @@ function log(...data) {
  */
 function progress(percentage) {
     let full = Math.floor(percentage * 50);
-    process.stdout.write(`\r\x1b[1m\x1b[93m[awsusers.js]\x1b[0m  [${"#".repeat(full)}${".".repeat(50 - full)}] (${(percentage * 100).toFixed(1)}%)`);
+    process.stdout.write(`\r\x1b[1m\x1b[93m[awsusers.js]\x1b[0m   [${"#".repeat(full)}${".".repeat(50 - full)}] (${(percentage * 100).toFixed(1)}%)`);
 
     if (percentage == 1) {
         console.log("");
@@ -91,9 +92,8 @@ async function getUsersGroups(users) {
  */
 function filterUsers(users, filters) {
     const regexFilters = filters.map(filter => new RegExp(filter));
-    return users.filter(user =>
-        regexFilters.reduce((matching, filter) => user.match(filter) != null || matching)
-        , false);
+    return users.filter(user => 
+        regexFilters.reduce((matching, filter) => user.match(filter) != null || matching, false));
 }
 
 /**
@@ -107,8 +107,7 @@ function filterByGroups(users, groups, filters) {
     const regexFilters = filters.map(filter => new RegExp(filter));
     return users.filter((user, index) =>
         groups[index].reduce((matchingGroup, group) =>
-            regexFilters.reduce((matching, filter) => group.match(filter) != null || matching) || matchingGroup
-            , false)
+            regexFilters.reduce((matching, filter) => group.match(filter) != null || matching) || matchingGroup, false)
         , false);
 } 
 
@@ -162,7 +161,7 @@ async function main(args) {
     const [ userFilters, groupFilters ] = readArgs(args);
 
     let users = await getUsers();
-    
+
     if (userFilters.length) {
         users = filterUsers(users, userFilters);
         log(`${users.length} users with matching name.`);
@@ -171,7 +170,7 @@ async function main(args) {
     if (groupFilters.length) {
         const groups = await getUsersGroups(users);
         users = filterByGroups(users, groups, groupFilters);
-        log(`${filteredGroups.length} users with matching groups.`);
+        log(`${users.length} users with matching groups.`);
     }
     
     console.log(users);
