@@ -65,7 +65,12 @@ async function getUsersGroups(users) {
         return client.send(command);
     };
 
-    const groups = await Promise.all(users.map(requestUserGroup));
+    let groups = [];
+    let usersCopy = [...users];
+    
+    while (usersCopy.length) {
+        groups.concat(await Promise.all(usersCopy.splice(0, MAX_SOCKET).map(requestUserGroup)))
+    }
 
     log("Retreiving users groups [OK]");
     return groups;
@@ -82,5 +87,6 @@ async function main() {
     console.log(groups);
 }
 
+const MAX_SOCKET = 50;
 const client = new IAMClient();
 main();
