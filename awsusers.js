@@ -4,8 +4,8 @@
  * @author Kevin Fedyna
  */
 
-const writeFileSync = require("fs").writeFileSync;
-const { IAMClient, ListUsersCommand, ListGroupsForUserCommand } = require("@aws-sdk/client-iam");
+import { writeFileSync} from "fs";
+import { IAMClient, ListUsersCommand, ListGroupsForUserCommand } from "@aws-sdk/client-iam";
 
 /**
  * Prints log with custom tag.
